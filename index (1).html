@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Speed Maths</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f6f7fb;--surface:#ffffff;--text:#1d2433;--muted:#667089;
+  --line:#d9deeb;--head:#e8ecf8;--accent:#3b5bdb;--ok:#2b8a3e;--okbg:#e6f6ea;--onok:#ffffff;--bad:#c92a2a;--badbg:#fdeaea;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#12151e;--surface:#1a1f2c;--text:#e8ebf5;--muted:#9aa3bb;
+    --line:#2e3547;--head:#252c40;--accent:#7c93ff;--ok:#69db7c;--okbg:#17301f;--onok:#12151e;--bad:#ff8787;--badbg:#3a1c1c;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12151e;--surface:#1a1f2c;--text:#e8ebf5;--muted:#9aa3bb;
+  --line:#2e3547;--head:#252c40;--accent:#7c93ff;--ok:#69db7c;--okbg:#17301f;--onok:#12151e;--bad:#ff8787;--badbg:#3a1c1c;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:0}
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+.app{display:flex;min-height:100vh;align-items:flex-start}
+.main{flex:1;min-width:0}
+#side{width:250px;flex:none;position:sticky;top:0;height:100vh;overflow-y:auto;padding:16px 12px;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+#side .brand{font-weight:800;font-size:1.05rem;padding:4px 8px 10px}
+#side>.tab{flex:none;width:100%;text-align:left;padding:10px 12px;font-size:.95rem}
+#side .tabs{flex-direction:column;flex-wrap:nowrap;margin:0 0 6px 12px;padding-left:8px;border-left:2px solid var(--line);gap:4px}
+#side .tabs .tab{flex:none;width:100%;text-align:left;padding:7px 10px;font-size:.88rem;font-weight:500}
+.menubtn{display:none;margin-bottom:10px}
+.scrim{display:none}
+@media (max-width:820px){
+  .app{display:block}
+  #side{position:fixed;left:0;top:0;bottom:0;height:auto;width:min(280px,82vw);z-index:30;transform:translateX(-102%);transition:transform .2s;padding-top:calc(16px + env(safe-area-inset-top,0px));box-shadow:2px 0 16px rgba(0,0,0,.25)}
+  #side.open{transform:none}
+  .scrim.show{display:block;position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.4)}
+  .menubtn{display:inline-block}
+}
+.crumb{color:var(--muted);font-size:.85rem;margin:0 0 4px}
+h1{font-size:1.4rem;margin:0 0 12px}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tab{flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-weight:600;font-size:.92rem}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.tabs.sub .tab{padding:7px;font-weight:500}
+.hidden{display:none !important}
+.picker{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:10px;padding:8px 10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;font-weight:600;font-size:.9rem}
+.picker .grp{display:inline-flex;align-items:center;gap:6px}
+.picker input{width:70px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;font-weight:600}
+.picker button{padding:5px 12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:center}
+.card span{display:block;color:var(--muted);font-size:.75rem}
+.card b{font-size:1.4rem}
+.card.right b{color:var(--ok)}
+.card.wrong b{color:var(--bad)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--text);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button:hover{filter:brightness(.96)}
+.scroll{overflow-x:auto;padding:8px 6px}
+table{border-collapse:separate;border-spacing:3px;margin:0 auto}
+th,td{padding:0}
+td{position:relative}
+th{width:clamp(30px,8.5vw,48px);height:clamp(30px,8.5vw,48px);background:var(--head);border-radius:8px;font-weight:700;text-align:center}
+th.corner{background:var(--accent);color:#fff}
+td input{width:clamp(30px,8.5vw,48px);height:clamp(30px,8.5vw,48px);text-align:center;font:inherit;font-weight:600;
+  background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:0;-moz-appearance:textfield}
+td input::-webkit-outer-spin-button,td input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+td input:focus{outline:2px solid var(--accent);outline-offset:0}
+td input.ok{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+td input.bad{background:var(--badbg);border-color:var(--bad);color:var(--bad)}
+td input.tok{color:var(--ok);font-weight:700}
+td input.tbad{color:var(--bad);font-weight:700}
+/* correct-answer badge shown by Show answers */
+.ans{position:absolute;top:-7px;right:-5px;z-index:2;font-size:.62rem;font-weight:700;line-height:1.35;padding:0 4px;border-radius:6px;background:var(--surface);border:1px solid var(--ok);color:var(--ok)}
+.ans:empty{display:none}
+.ans.w{border-color:var(--bad);color:var(--bad)}
+.ans.m{border-color:var(--muted);color:var(--muted)}
+/* list tables (squares, cubes) */
+table.pw th{width:100px;height:38px}
+table.pw td input{width:150px;height:38px}
+.cell{display:flex;align-items:center;gap:10px}
+table.pw .ans{position:static;font-size:.95rem;padding:2px 8px;min-width:48px;text-align:center}
+/* multiplication tables: drop-down cards */
+.blocks{display:flex;flex-direction:column;gap:10px}
+.blocks:empty::before{content:"No tables yet. Type a table number above and press Add table.";color:var(--muted);text-align:center;padding:16px;font-size:.9rem}
+.tcard{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.thead{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--head)}
+.tgl{flex:1;text-align:left;border:none;background:transparent;font-weight:700;padding:6px 4px;color:inherit}
+.tgl .car{display:inline-block;transition:transform .15s}
+.tcard:not(.open) .tgl .car{transform:rotate(-90deg)}
+.tstat{font-size:.8rem;color:var(--muted)}
+.tdone,.tdel{padding:5px 12px}
+.tcard.full .tdone{background:var(--accent);border-color:var(--accent);color:#fff}
+/* table bar: red while incomplete, green once every box is filled */
+.tcard:not(.full){border-color:var(--bad)}
+.tcard:not(.full) .thead{background:var(--bad);color:var(--onok)}
+.tcard:not(.full) .tstat{color:var(--onok)}
+.tcard.full{border-color:var(--ok)}
+.tcard.full .thead{background:var(--ok);color:var(--onok)}
+.tcard.full .tstat{color:var(--onok)}
+.tbody{display:none;padding:8px 6px;overflow-x:auto}
+.tcard.open .tbody{display:block}
+table.tbl{margin:0 auto}
+table.tbl th.corner{width:auto;min-width:40px;height:34px;padding:0 8px;white-space:nowrap}
+table.tbl td.tn{width:40px;height:34px;text-align:center;font-weight:700;background:var(--head);border-radius:8px}
+table.tbl td input{width:72px;height:34px}
+table.tbl th.sub{width:72px;height:26px;font-size:.8rem;background:transparent;color:var(--muted)}
+.hint{color:var(--muted);font-size:.85rem;margin-top:12px;text-align:center}
+.tab{min-width:0}
+table.pw.tw th{width:70px}
+table.pw.tw td input{width:90px}
+.pblocks:empty::before{content:"No numbers yet. Type a number above and press Add number.";color:var(--muted);text-align:center;padding:16px;font-size:.9rem}
+table.tbl.pp td input{width:min(280px,58vw)}
+.tadd{display:block;margin:8px auto 2px;padding:5px 14px}
+.tadd:disabled{opacity:.5;cursor:default}
+table.pw.pc th{width:70px}
+table.pw.pc th.corner{width:auto;padding:0 10px;white-space:nowrap}
+table.pw.pc td input{width:110px}
+table.pw.pc th.fr{width:auto;padding:0 6px;white-space:nowrap}
+th.fr input{width:38px;height:28px;text-align:center;font:inherit;font-weight:700;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:0}
+th.fr input:focus{outline:2px solid var(--accent);outline-offset:0}
+th.fr span{margin:0 3px}
+#learntabs{flex-wrap:wrap}
+#learntabs .tab{flex:1 1 auto;padding:7px 10px}
+.fblocks:empty::before{content:"No fractions yet. Type a number above and press Add fraction.";color:var(--muted);text-align:center;padding:16px;font-size:.9rem}
+table.tbl.pf td input{width:110px}
+table.tbl.pf td.tn{width:auto;padding:0 12px;white-space:nowrap}
+#addtabs{flex-wrap:wrap}
+.wrap>.tabs:not(.sub){flex-wrap:wrap}
+.wrap>.tabs:not(.sub) .tab{flex:1 1 auto;padding:10px 8px}
+#addtabs .tab{flex:1 1 auto;padding:7px 10px}
+.ablocks:empty::before{content:"No sets yet. Press Add set above.";color:var(--muted);text-align:center;padding:16px;font-size:.9rem}
+table.tbl td.tq{width:auto;height:34px;padding:0 12px;white-space:nowrap;text-align:center;font-weight:700;background:var(--head);border-radius:8px}
+table.tbl.ad td input{width:96px}
+@media (max-width:480px){.tabs .tab{font-size:.78rem;padding:10px 2px}}
+</style>
+</head>
+<body>
+<div class="app">
+<nav id="side" aria-label="Sections">
+  <div class="brand">Speed Maths</div>
+  <button class="tab active" id="cat-math">Calculation</button>
+    <div class="tabs sub" id="subtabs">
+      <button class="tab active" id="tab-add">Addition +</button>
+      <button class="tab" id="tab-sub">Subtraction −</button>
+      <button class="tab" id="tab-mul">Multiplication ×</button>
+    </div>
+    <div class="tabs sub hidden" id="addtabs">
+      <button class="tab active" id="tab-a1">Single digit</button>
+      <button class="tab" id="tab-a2">2 digit</button>
+      <button class="tab" id="tab-a3">3 digit</button>
+      <button class="tab" id="tab-a23">2 &amp; 3 digit</button>
+    </div>
+  <button class="tab" id="cat-sq">Squares</button>
+  <button class="tab" id="cat-cu">Cubes</button>
+  <button class="tab" id="cat-tb">Tables</button>
+  <button class="tab" id="cat-learn">To Learn</button>
+    <div class="tabs sub hidden" id="learntabs">
+      <button class="tab active" id="tab-prime">Primes ≤ 100</button>
+      <button class="tab" id="tab-twin">Twin primes</button>
+      <button class="tab" id="tab-pow">Powers</button>
+      <button class="tab" id="tab-pc">Percentage</button>
+      <button class="tab" id="tab-pf">Particular fraction</button>
+    </div>
+  <button class="tab" id="cat-rnd">Random</button>
+    <div class="tabs sub hidden" id="rndtabs">
+      <button class="tab active" id="tab-rsq">Square</button>
+      <button class="tab" id="tab-rtb">Table</button>
+      <button class="tab" id="tab-rcu">Cube</button>
+    </div>
+</nav>
+<div class="scrim" id="scrim"></div>
+<div class="main">
+<div class="wrap">
+  <button type="button" class="menubtn" id="menuBtn">☰ Menu</button>
+  <p class="crumb" id="crumb">Speed Maths › Single Digit Addition</p>
+  <h1 id="title">Addition Grid</h1>
+  <div class="picker hidden" id="picker">
+    <span class="grp" id="g-range"><label for="opFrom">Numbers from</label><input type="number" id="opFrom" min="1" inputmode="numeric"><label for="opTo">to</label><input type="number" id="opTo" min="1" inputmode="numeric"></span>
+    <span class="grp" id="g-add"><label for="opTable">Table</label><input type="number" id="opTable" min="1" max="999" value="11" inputmode="numeric"><button type="button" class="primary" id="opAdd">Add table</button></span>
+    <span class="grp" id="g-sr"><label for="opSr">Sr no up to</label><input type="number" id="opSr" min="1" max="30" inputmode="numeric"></span>
+    <span class="grp" id="g-rounds"><label for="opRounds">Rounds</label><input type="number" id="opRounds" min="1" max="8" inputmode="numeric"></span>
+    <span class="grp hidden" id="g-pn"><label for="opPn">Number</label><input type="number" id="opPn" min="2" max="99" value="2" inputmode="numeric"><button type="button" class="primary" id="opPnAdd">Add number</button></span>
+    <span class="grp hidden" id="g-pf"><label for="opPf">Fraction 1 /</label><input type="number" id="opPf" min="2" max="99" value="7" inputmode="numeric"><button type="button" class="primary" id="opPfAdd">Add fraction</button></span>
+    <span class="grp hidden" id="g-rt"><label for="opRt">Select table</label><input type="number" id="opRt" min="1" max="999" value="11" inputmode="numeric"></span>
+    <span class="grp hidden" id="g-aq"><label for="opQn">Questions per set</label><input type="number" id="opQn" min="1" max="30" value="10" inputmode="numeric"><button type="button" class="primary" id="opAq">Add set</button></span>
+  </div>
+  <div class="stats">
+    <div class="card"><span>Answered</span><b id="answered">0</b> / <span style="display:inline" id="total">100</span></div>
+    <div class="card right"><span>Right</span><b id="right">0</b></div>
+    <div class="card wrong"><span>Wrong</span><b id="wrong">0</b></div>
+  </div>
+  <div class="bar">
+    <button class="primary" id="check">Check answers</button>
+    <button id="shuffle">New random order</button>
+    <button id="inorder" class="hidden">In order</button>
+    <button id="show">Show answers</button>
+    <button id="reset">Clear</button>
+  </div>
+  <div class="scroll">
+    <table id="grid"></table>
+    <div id="blocks" class="blocks hidden"></div>
+    <div id="pblocks" class="blocks pblocks hidden"></div>
+    <div id="fblocks" class="blocks fblocks hidden"></div>
+    <button type="button" class="tadd hidden" id="pcAdd">+ Add row</button>
+  </div>
+  <p class="hint" id="hint"></p>
+</div>
+</div>
+</div>
+<script>
+(function(){
+  var N=10, grid=document.getElementById('grid'), blocks=document.getElementById('blocks');
+  var inputs=[], checked=false, revealed=false;
+  var rowNums=[], colNums=[], nums=[], view='add';
+  var tcards=[], tbInit=false;
+  var POW={
+    sq:{p:2,label:'Square',plural:'Squares',ex:'12 → 144'},
+    cu:{p:3,label:'Cube',plural:'Cubes',ex:'5 → 125'}
+  };
+
+  /* ---- editable settings (kept in this browser) ---- */
+  var DEF={ sq:{from:1,to:50}, cu:{from:1,to:25}, tb:{sr:10,rounds:4}, rx:{rounds:4}, rsq:{from:2,to:50}, rcu:{from:2,to:25}, rtb:{table:11} };
+  var prefs=JSON.parse(JSON.stringify(DEF));
+  try{
+    var saved=JSON.parse(localStorage.getItem('speedmaths-prefs')||'null');
+    if(saved){
+      for(var k in DEF) if(saved[k]) for(var f in DEF[k]) if(typeof saved[k][f]==='number') prefs[k][f]=saved[k][f];
+      if(saved.tb3){
+        if(typeof saved.tb3.sr==='number') prefs.tb.sr=saved.tb3.sr;
+        if(typeof saved.tb3.rounds==='number') prefs.tb.rounds=saved.tb3.rounds;
+      }
+    }
+  }catch(e){}
+  function savePrefs(){ try{ localStorage.setItem('speedmaths-prefs',JSON.stringify(prefs)); }catch(e){} }
+  function clamp(n,lo,hi){ return Math.min(hi,Math.max(lo,n)); }
+  function norm(v){
+    var p=prefs[v];
+    if(p.from!==undefined){
+      p.from=clamp(p.from,1,999);
+      p.to=clamp(p.to,p.from,999);
+      if(p.to-p.from>199) p.to=p.from+199;
+    }
+    if(p.sr!==undefined) p.sr=clamp(p.sr,1,30);
+    if(p.rounds!==undefined) p.rounds=clamp(p.rounds,1,8);
+  }
+  var OPT_FIELDS=[['opFrom','from'],['opTo','to'],['opSr','sr'],['opRounds','rounds']];
+  function loadOpts(){
+    var p=prefs[view]; if(!p) return;
+    norm(view);
+    OPT_FIELDS.forEach(function(f){ if(p[f[1]]!==undefined) document.getElementById(f[0]).value=p[f[1]]; });
+    document.getElementById('g-range').classList.toggle('hidden',p.from===undefined);
+    document.getElementById('g-add').classList.toggle('hidden',view!=='tb');
+    document.getElementById('g-pn').classList.add('hidden');
+    document.getElementById('g-pf').classList.add('hidden');
+    document.getElementById('g-sr').classList.toggle('hidden',p.sr===undefined);
+    document.getElementById('g-rounds').classList.toggle('hidden',p.rounds===undefined);
+  }
+  function readOpts(){
+    var p=prefs[view]; if(!p) return false;
+    var ok=true;
+    OPT_FIELDS.forEach(function(f){
+      if(p[f[1]]===undefined) return;
+      var n=parseInt(document.getElementById(f[0]).value,10);
+      if(isNaN(n)) ok=false; else p[f[1]]=n;
+    });
+    if(!ok) return false;
+    norm(view); savePrefs();
+    return true;
+  }
+
+  function shuffleArr(a){
+    for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+  }
+  function range(from,to){ var a=[]; for(var i=from;i<=to;i++) a.push(i); return a; }
+  function isPow(){ return view==='sq'||view==='cu'; }
+  function isTb(){ return view==='tb'; }
+  function isPr(){ return view==='pr'; }
+  function isTw(){ return view==='tw'; }
+  function isPp(){ return view==='pp'; }
+  function isPc(){ return view==='pc'; }
+  function isPf(){ return view==='pf'; }
+  function isSpecial(){ return isPr()||isTw()||isPp()||isPc()||isPf(); }
+  var PRIMES=[2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97];
+  var TWINS=[[3,5],[5,7],[11,13],[17,19],[29,31],[41,43],[59,61],[71,73]];
+  var pblocks=document.getElementById('pblocks'), pcards=[], ppInit=false, PP_ROWS=10, PP_MAX_ROWS=30, pcRows=20, PC_ROWS=20, PC_MAX=60, fblocks=document.getElementById('fblocks'), fcards=[], fInit=false, PF_MAX_ROWS=60;
+  function at(r,c){ return inputs[r*N+c]; }
+  function focusFirst(){
+    var a=document.activeElement;
+    if(a && a.closest && a.closest('#picker')) return;
+    if(inputs[0]) inputs[0].focus();
+  }
+  function ansOf(inp){
+    if(isRx()) return inp.dataset.k;
+    if(isAd()){ var o=inp.dataset.o, x=+inp.dataset.a, y=+inp.dataset.b; return o==='-'?x-y:(o==='*'?x*y:(o==='q'?x*x:(o==='c'?x*x*x:x+y))); }
+    if(isTb()){ return (+inp.dataset.t)*(+inp.dataset.m); }
+    if(isPp()){ return ppAns(+inp.dataset.b,+inp.dataset.k); }
+    if(isPr()){ return PRIMES[+inp.dataset.i]; }
+    if(isPow()){ return Math.pow(nums[+inp.dataset.i],POW[view].p); }
+    var r=rowNums[+inp.dataset.r], c=colNums[+inp.dataset.c];
+    return view==='mul' ? r*c : view==='add' ? r+c : (c<r ? c+10-r : c-r);
+  }
+  function isComplete(inp){
+    var v=inp.value;
+    if(v==='') return false;
+    if(isRx()) return rxComplete(inp);
+    if(isPc()||isPf()) return v.trim()!==''&&(pcOk(inp)||inp!==document.activeElement);
+    if(isPr()||isTw()) return v.length>=2||(v.length===1&&inp!==document.activeElement);
+    return v.length>=String(ansOf(inp)).length;
+  }
+
+  function buildMath(){
+    rowNums=shuffleArr(range(0,9)); colNums=shuffleArr(range(0,9)); checked=false; revealed=false;
+    var sym=view==='add'?'+':(view==='mul'?'×':'−');
+    var html='<tr><th class="corner">'+sym+'</th>';
+    for(var c=0;c<N;c++) html+='<th>'+colNums[c]+'</th>';
+    html+='</tr>';
+    for(var r=0;r<N;r++){
+      html+='<tr><th>'+rowNums[r]+'</th>';
+      for(var c2=0;c2<N;c2++) html+='<td><input type="text" inputmode="numeric" maxlength="2" autocomplete="off" data-r="'+r+'" data-c="'+c2+'" aria-label="'+(view==='add'?rowNums[r]+' plus '+colNums[c2]:(view==='mul'?rowNums[r]+' times '+colNums[c2]:colNums[c2]+' minus '+rowNums[r]))+'"><span class="ans"></span></td>';
+      html+='</tr>';
+    }
+    grid.className='';
+    grid.innerHTML=html;
+    inputs=Array.prototype.slice.call(grid.querySelectorAll('input'));
+    inputs.forEach(wireMath);
+    var isAdd=(view==='add'), opName=(view==='mul'?'Multiplication':(isAdd?'Addition':'Subtraction'));
+    document.getElementById('crumb').textContent='Speed Maths › Single Digit '+opName;
+    document.getElementById('title').textContent=opName+' Grid';
+    document.getElementById('hint').textContent= view==='mul' ? 'Type the product of the row and column numbers. Counts update as you answer. Check answers colors the cells; Show answers also writes the correct answer on every wrong or blank cell. Arrow keys move between cells.' : isAdd
+      ? 'Type the sum of the row and column numbers. Counts update as you answer. Check answers colors the cells; Show answers also writes the correct answer on every wrong or blank cell. Arrow keys move between cells.'
+      : 'Type top number − side number. If the top number is smaller, treat it as 10 more (top 6, side 7: 16 − 7 = 9). Counts update as you answer. Show answers writes the correct answer on every wrong or blank cell. Arrow keys move between cells.';
+    update();
+    focusFirst();
+  }
+
+  function buildPow(random){
+    var cfg=POW[view]; norm(view); var p=prefs[view];
+    nums=range(p.from,p.to); if(random) shuffleArr(nums);
+    checked=false; revealed=false;
+    var maxLen=String(Math.pow(p.to,cfg.p)).length;
+    var html='<tr><th class="corner">Number</th><th class="corner">'+cfg.label+'</th></tr>';
+    for(var i=0;i<nums.length;i++){
+      html+='<tr><th>'+nums[i]+'</th><td><div class="cell"><input type="text" inputmode="numeric" maxlength="'+maxLen+'" autocomplete="off" data-i="'+i+'" aria-label="'+cfg.label+' of '+nums[i]+'"><span class="ans"></span></div></td></tr>';
+    }
+    grid.className='pw';
+    grid.innerHTML=html;
+    inputs=Array.prototype.slice.call(grid.querySelectorAll('input'));
+    inputs.forEach(wirePow);
+    document.getElementById('crumb').textContent=cfg.plural;
+    document.getElementById('title').textContent=cfg.plural+' '+p.from+'–'+p.to;
+    document.getElementById('inorder').textContent='In order ('+p.from+'–'+p.to+')';
+    document.getElementById('hint').textContent='Type the '+cfg.label.toLowerCase()+' of each number (for example '+cfg.ex+'). Change the range in the boxes above. Counts update as you answer. Check answers colors the cells; Show answers also writes the correct answer beside every wrong or blank one. Arrow keys move up and down.';
+    update();
+    focusFirst();
+  }
+
+  /* ---- To Learn: answer checking for primes, twin primes, powers ---- */
+  function evalSpecial(){
+    var good=[], rev=[], seen={}, r, c, k;
+    if(isPr()){
+      inputs.forEach(function(inp,i){
+        var n=+inp.value; good[i]=false;
+        if(isComplete(inp)&&PRIMES.indexOf(n)>=0&&!seen[n]){ seen[n]=1; good[i]=true; }
+      });
+      var miss=PRIMES.filter(function(p){ return !seen[p]; }), m=0;
+      inputs.forEach(function(inp,i){ if(!good[i]) rev[i]=miss[m++]; });
+    } else if(isTw()){
+      var members={};
+      TWINS.forEach(function(p){ members[p[0]]=1; members[p[1]]=1; });
+      for(r=0;r<TWINS.length;r++){
+        var A=inputs[2*r], B=inputs[2*r+1], ca=isComplete(A), cb=isComplete(B), a=+A.value, b=+B.value;
+        good[2*r]=false; good[2*r+1]=false;
+        if(ca&&cb){
+          var lo=Math.min(a,b), hi=Math.max(a,b);
+          if(hi-lo===2&&members[lo]&&members[hi]&&!seen[lo]){ seen[lo]=1; good[2*r]=true; good[2*r+1]=true; }
+        } else if(ca){ good[2*r]=!!members[a]; }
+        else if(cb){ good[2*r+1]=!!members[b]; }
+      }
+      var missT=TWINS.filter(function(p){ return !seen[p[0]]; }), rowPair=[];
+      for(r=0;r<TWINS.length;r++){
+        if(good[2*r]&&good[2*r+1]) continue;
+        var v=good[2*r]?+inputs[2*r].value:(good[2*r+1]?+inputs[2*r+1].value:null);
+        if(v!==null){
+          for(k=0;k<missT.length;k++){ if(missT[k][0]===v||missT[k][1]===v){ rowPair[r]=missT.splice(k,1)[0]; break; } }
+        }
+      }
+      for(r=0;r<TWINS.length;r++){
+        if(good[2*r]&&good[2*r+1]) continue;
+        var pair=rowPair[r]||missT.shift();
+        if(!pair) continue;
+        var vv=good[2*r]?+inputs[2*r].value:(good[2*r+1]?+inputs[2*r+1].value:null);
+        if(vv!==null&&rowPair[r]){
+          var partner=pair[0]===vv?pair[1]:pair[0];
+          for(c=0;c<2;c++) if(!good[2*r+c]) rev[2*r+c]=partner;
+        } else {
+          for(c=0;c<2;c++) if(!good[2*r+c]) rev[2*r+c]=pair[c];
+        }
+      }
+    } else if(isPc()||isPf()){
+      inputs.forEach(function(inp,i){
+        good[i]=isComplete(inp)&&pcOk(inp);
+        rev[i]=pcAns(inp);
+      });
+    } else if(isPp()){
+      inputs.forEach(function(inp,i){
+        var ans=ppAns(+inp.dataset.b,+inp.dataset.k);
+        good[i]=isComplete(inp)&&inp.value.replace(/^0+(?=\d)/,'')===ans;
+        rev[i]=ans;
+      });
+    }
+    return {good:good,rev:rev};
+  }
+
+  /* ---- To Learn: particular fraction (a drop-down per fraction, like Tables) ---- */
+  function findFCard(n){ for(var i=0;i<fcards.length;i++) if(fcards[i].n===n) return fcards[i]; return null; }
+  function refreshFInputs(){
+    inputs=[];
+    fcards.forEach(function(card){
+      Array.prototype.forEach.call(card.el.querySelectorAll('input'),function(e){ inputs.push(e); });
+    });
+  }
+  function applyFCard(card){
+    var el=card.el;
+    el.classList.toggle('open',card.open);
+    el.classList.toggle('done',card.done);
+    el.querySelector('.tlabel').textContent='Fractions of 1/'+card.n+(card.done?'  ✓':'');
+    el.querySelector('.tdone').textContent=card.done?'Reopen':'Done';
+    el.querySelector('.tgl').setAttribute('aria-expanded',card.open?'true':'false');
+  }
+  function fRowHtml(n,k){
+    return '<tr><td class="tn">'+k+'/'+n+'</td><td><div class="cell"><input type="text" inputmode="decimal" autocomplete="off" maxlength="8" data-a="'+k+'" data-n="'+n+'" data-c="p" data-r="'+(k-1)+'" aria-label="Percentage of '+k+' over '+n+'"><span class="ans"></span></div></td><td><div class="cell"><input type="text" inputmode="text" autocomplete="off" maxlength="9" data-a="'+k+'" data-n="'+n+'" data-c="m" data-r="'+(k-1)+'" aria-label="Mixed fraction of '+k+' over '+n+'"><span class="ans"></span></div></td></tr>';
+  }
+  function wirePf(inp){
+    function cell(r,c){
+      var el=inp.closest('.tcard');
+      return el?el.querySelector('input[data-r="'+r+'"][data-c="'+c+'"]'):null;
+    }
+    function nextOf(){ var r=+inp.dataset.r; return inp.dataset.c==='p'?cell(r,'m'):cell(r+1,'p'); }
+    inp.addEventListener('input',function(){
+      inp.value=inp.value.replace(inp.dataset.c==='p'?/[^0-9.]/g:/[^0-9 \/]/g,'');
+      update();
+      if(pcOk(inp)){ var nx=nextOf(); if(nx) nx.focus(); }
+    });
+    inp.addEventListener('focus',function(){ inp.select(); });
+    inp.addEventListener('blur',function(){ setTimeout(update,0); });
+    inp.addEventListener('keydown',function(e){
+      var r=+inp.dataset.r,c=inp.dataset.c,t=null;
+      if(e.key==='ArrowDown')t=cell(r+1,c);
+      else if(e.key==='ArrowUp')t=cell(r-1,c);
+      else if(e.key==='Enter'){ t=nextOf(); if(!t){ checked=true; update(); return; } }
+      else if(e.key==='Backspace'&&inp.value===''){ t=c==='m'?cell(r,'p'):cell(r-1,'m'); }
+      if(t){ e.preventDefault(); t.focus(); }
+    });
+  }
+  function makeFCard(card){
+    var n=card.n, k, h;
+    var el=document.createElement('div');
+    el.className='tcard'; el.dataset.n=n;
+    h='<div class="thead"><button type="button" class="tgl"><span class="car">▾</span> <span class="tlabel"></span></button>'+
+      '<span class="tstat"></span><button type="button" class="tdone">Done</button>'+
+      '<button type="button" class="tdel" aria-label="Remove fractions of 1 over '+n+'">×</button></div>'+
+      '<div class="tbody"><table class="tbl pf"><tr><th class="corner">Fraction</th><th class="corner">Percentage %</th><th class="corner">Mixed fraction</th></tr>';
+    for(k=1;k<=card.rows;k++) h+=fRowHtml(n,k);
+    h+='</table><button type="button" class="tadd">+ Add row</button></div>';
+    el.innerHTML=h;
+    card.el=el;
+    Array.prototype.forEach.call(el.querySelectorAll('input'),wirePf);
+    applyFCard(card);
+    return el;
+  }
+  function addFRow(card){
+    if(card.rows>=PF_MAX_ROWS) return;
+    card.rows++;
+    var tmp=document.createElement('tbody');
+    tmp.innerHTML=fRowHtml(card.n,card.rows);
+    var tr=tmp.firstChild;
+    var tb=card.el.querySelector('table.tbl');
+    (tb.querySelector('tbody')||tb).appendChild(tr);
+    var ins=tr.querySelectorAll('input');
+    Array.prototype.forEach.call(ins,wirePf);
+    refreshFInputs();
+    update();
+    ins[0].focus();
+    if(card.rows>=PF_MAX_ROWS){ var btn=card.el.querySelector('.tadd'); btn.disabled=true; btn.textContent='Max rows reached'; }
+  }
+  function setFTexts(){
+    document.getElementById('crumb').textContent='To Learn \u203a Particular fraction';
+    document.getElementById('title').textContent='Particular fraction';
+    document.getElementById('hint').textContent='Type the bottom number of a fraction (for example 7 for 1/7) and press Add fraction. Each fraction gets its own drop-down: 1/7, 2/7, 3/7 and so on. Fill the percentage value and, if you like, the mixed fraction (like 14 2/7); mixed boxes you leave empty are ignored. The bar is red until every percentage box is filled, then it turns green. Press Done to fold it away, click a bar to open or close it, and press + Add row to go on past the last fraction.';
+  }
+  function addFCard(n){
+    if(!(n>=2&&n<=99)) return;
+    var ex=findFCard(n);
+    if(ex){
+      ex.open=true; applyFCard(ex);
+      ex.el.scrollIntoView({block:'nearest'});
+      var f=ex.el.querySelector('input'); if(f) f.focus();
+      return;
+    }
+    var card={n:n,rows:Math.max(1,Math.min(n-1,20)),done:false,open:true};
+    fcards.push(card);
+    fblocks.appendChild(makeFCard(card));
+    refreshFInputs();
+    update();
+    card.el.scrollIntoView({block:'nearest'});
+    var first=card.el.querySelector('input'); if(first) first.focus();
+    document.getElementById('opPf').value=Math.min(99,n+1);
+  }
+  function buildPf(){
+    checked=false; revealed=false;
+    setFTexts();
+    if(!fInit){ fInit=true; addFCard(7); return; }
+    refreshFInputs();
+    update();
+  }
+
+  /* ---- To Learn: percentage (fraction, percentage value, mixed fraction) ---- */
+  function gcd(a,b){ return b?gcd(b,a%b):a; }
+  function pcMixed(a,n){
+    var w=Math.floor(100*a/n), rem=100*a-w*n;
+    if(rem===0) return String(w);
+    var g=gcd(rem,n);
+    return w+' '+(rem/g)+'/'+(n/g);
+  }
+  function pcAns(inp){
+    var a=+inp.dataset.a, n=+inp.dataset.n;
+    if(!(a>=1&&n>=1)) return '';
+    return inp.dataset.c==='p' ? String(+(100*a/n).toFixed(2)) : pcMixed(a,n);
+  }
+  function pcOk(inp){
+    var a=+inp.dataset.a, n=+inp.dataset.n, v=inp.value.trim();
+    if(v===''||!(a>=1&&n>=1)) return false;
+    if(inp.dataset.c==='p'){
+      if(!/^\d+(\.\d+)?$/.test(v)) return false;
+      var x=parseFloat(v), ex=100*a/n;
+      return (10000*a)%n===0 ? Math.abs(x-ex)<1e-9 : Math.abs(x-ex)<0.0100001;
+    }
+    var m=/^(\d+)(?:\s+(\d+)\s*\/\s*(\d+))?$/.exec(v);
+    if(!m) return false;
+    var w=+m[1], p=m[2]===undefined?0:+m[2], q=m[3]===undefined?1:+m[3];
+    if(q===0) return false;
+    return (w*q+p)*n===100*a*q;
+  }
+  function pcRowHtml(r){
+    var n=r+2;
+    return '<tr><th class="fr"><input type="text" inputmode="numeric" class="fn" maxlength="3" value="1" aria-label="Numerator"><span>/</span><input type="text" inputmode="numeric" class="fd" maxlength="3" value="'+n+'" aria-label="Denominator"></th><td><div class="cell"><input type="text" inputmode="decimal" autocomplete="off" maxlength="8" data-i="'+(r*2)+'" data-a="1" data-n="'+n+'" data-c="p" aria-label="Percentage of the fraction in this row"><span class="ans"></span></div></td><td><div class="cell"><input type="text" inputmode="text" autocomplete="off" maxlength="9" data-i="'+(r*2+1)+'" data-a="1" data-n="'+n+'" data-c="m" aria-label="Mixed fraction of the fraction in this row"><span class="ans"></span></div></td></tr>';
+  }
+  function wirePc(inp){
+    inp.addEventListener('input',function(){
+      inp.value=inp.value.replace(inp.dataset.c==='p'?/[^0-9.]/g:/[^0-9 \/]/g,'');
+      update();
+      if(pcOk(inp)){ var nx=inputs[+inp.dataset.i+1]; if(nx) nx.focus(); }
+    });
+    inp.addEventListener('focus',function(){ inp.select(); });
+    inp.addEventListener('blur',function(){ setTimeout(update,0); });
+    inp.addEventListener('keydown',function(e){
+      var i=+inp.dataset.i,t=null;
+      if(e.key==='ArrowDown')t=inputs[i+2];
+      else if(e.key==='ArrowUp')t=inputs[i-2];
+      else if(e.key==='Enter'){ t=inputs[i+1]; if(!t){ checked=true; update(); return; } }
+      else if(e.key==='Backspace'&&inp.value===''&&i>0){ t=inputs[i-1]; }
+      if(t){ e.preventDefault(); t.focus(); }
+    });
+  }
+  function wireFr(fi){
+    fi.addEventListener('input',function(){
+      fi.value=fi.value.replace(/\D/g,'');
+      var tr=fi.closest('tr'), fn=tr.querySelector('.fn'), fd=tr.querySelector('.fd');
+      var a=parseInt(fn.value,10), n=parseInt(fd.value,10), ok=a>=1&&n>=1;
+      Array.prototype.forEach.call(tr.querySelectorAll('td input'),function(e){
+        e.dataset.a=ok?a:0; e.dataset.n=ok?n:0; e.value='';
+      });
+      update();
+    });
+    fi.addEventListener('focus',function(){ fi.select(); });
+    fi.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){ e.preventDefault(); var nx=fi.closest('tr').querySelector('td input'); if(nx) nx.focus(); }
+    });
+  }
+  function buildPc(){
+    checked=false; revealed=false; pcRows=PC_ROWS;
+    var html='<tr><th class="corner">Fraction</th><th class="corner">Percentage %</th><th class="corner">Mixed fraction</th></tr>';
+    for(var r=0;r<pcRows;r++) html+=pcRowHtml(r);
+    grid.className='pw pc';
+    grid.innerHTML=html;
+    inputs=Array.prototype.slice.call(grid.querySelectorAll('td input'));
+    inputs.forEach(wirePc);
+    Array.prototype.forEach.call(grid.querySelectorAll('th.fr input'),wireFr);
+    var b=document.getElementById('pcAdd'); b.disabled=false; b.textContent='+ Add row';
+    document.getElementById('crumb').textContent='To Learn \u203a Percentage';
+    document.getElementById('title').textContent='Fractions and percentages';
+    document.getElementById('hint').textContent='For each fraction type its percentage value (like 12.5, or 33.33 for repeating ones) and its mixed fraction (the whole number, a space, then the fraction, like 12 1/2). Press Enter to move on, and leave any mixed fraction box empty to skip it: skipped boxes are ignored. Check answers colors the cells; Show answers writes the correct value in every wrong or blank box. Click the numbers in the Fraction column to change a fraction, for example to 3/8; that row is cleared and checked against your new fraction. Press + Add row under the table for the next fraction.';
+    update();
+    focusFirst();
+  }
+  function addPcRow(){
+    if(!isPc()||pcRows>=PC_MAX) return;
+    var r=pcRows; pcRows++;
+    var tmp=document.createElement('tbody');
+    tmp.innerHTML=pcRowHtml(r);
+    var tr=tmp.firstChild;
+    (grid.querySelector('tbody')||grid).appendChild(tr);
+    var ins=tr.querySelectorAll('td input');
+    Array.prototype.forEach.call(ins,function(e){ wirePc(e); inputs.push(e); });
+    Array.prototype.forEach.call(tr.querySelectorAll('th.fr input'),wireFr);
+    update();
+    ins[0].focus();
+    if(pcRows>=PC_MAX){ var b=document.getElementById('pcAdd'); b.disabled=true; b.textContent='Max rows reached'; }
+  }
+
+  /* ---- To Learn: twin primes ---- */
+  function buildTw(){
+    checked=false; revealed=false;
+    var html='<tr><th class="corner">No.</th><th class="corner">Prime</th><th class="corner">Twin</th></tr>';
+    for(var r=0;r<TWINS.length;r++){
+      html+='<tr><th>'+(r+1)+'</th>';
+      for(var c=0;c<2;c++) html+='<td><div class="cell"><input type="text" inputmode="numeric" maxlength="2" autocomplete="off" data-i="'+(r*2+c)+'" aria-label="Twin prime pair '+(r+1)+', number '+(c+1)+'"><span class="ans"></span></div></td>';
+      html+='</tr>';
+    }
+    grid.className='pw tw';
+    grid.innerHTML=html;
+    inputs=Array.prototype.slice.call(grid.querySelectorAll('input'));
+    inputs.forEach(wireTw);
+    document.getElementById('crumb').textContent='To Learn \u203a Twin primes';
+    document.getElementById('title').textContent='Twin primes up to 100';
+    document.getElementById('hint').textContent='Twin primes are two primes that differ by 2, like 3 and 5. There are 8 such pairs up to 100. Type one pair in each row, in any order, and do not repeat a pair. For single-digit primes press Enter or an arrow key to move on. Check answers colors the cells; Show answers writes the pairs you have not found yet.';
+    update();
+    focusFirst();
+  }
+
+  function wireTw(inp){
+    inp.addEventListener('input',function(){
+      inp.value=inp.value.replace(/\D/g,'');
+      update();
+      if(isComplete(inp)){
+        var i=+inp.dataset.i;
+        if(i<inputs.length-1) inputs[i+1].focus();
+      }
+    });
+    inp.addEventListener('focus',function(){ inp.select(); });
+    inp.addEventListener('blur',function(){ setTimeout(update,0); });
+    inp.addEventListener('keydown',function(e){
+      var i=+inp.dataset.i,t=null;
+      if(e.key==='ArrowDown')t=inputs[i+2];
+      else if(e.key==='ArrowUp')t=inputs[i-2];
+      else if(e.key==='ArrowRight')t=inputs[i+1];
+      else if(e.key==='ArrowLeft')t=inputs[i-1];
+      else if(e.key==='Enter'){ if(i<inputs.length-1) t=inputs[i+1]; else { checked=true; update(); return; } }
+      else if(e.key==='Backspace'&&inp.value===''&&i>0){ t=inputs[i-1]; }
+      if(t){ e.preventDefault(); t.focus(); }
+    });
+  }
+
+  /* ---- To Learn: powers of a number ---- */
+  function ppAns(b,k){ return String(BigInt(b)**BigInt(k)); }
+  function ppRowHtml(b,k){
+    return '<tr><td class="tn">'+k+'</td><td><div class="cell"><input type="text" inputmode="numeric" maxlength="'+ppAns(b,k).length+'" autocomplete="off" data-b="'+b+'" data-k="'+k+'" data-r="'+(k-1)+'" aria-label="'+b+' to the power '+k+'"><span class="ans"></span></div></td></tr>';
+  }
+  function addPRow(card){
+    if(card.rows>=PP_MAX_ROWS) return;
+    card.rows++;
+    var tmp=document.createElement('tbody');
+    tmp.innerHTML=ppRowHtml(card.b,card.rows);
+    var tr=tmp.firstChild;
+    var tb=card.el.querySelector('table.tbl');
+    (tb.querySelector('tbody')||tb).appendChild(tr);
+    var inp=tr.querySelector('input');
+    wirePp(inp);
+    refreshPInputs();
+    update();
+    inp.focus();
+    if(card.rows>=PP_MAX_ROWS){ var btn=card.el.querySelector('.tadd'); btn.disabled=true; btn.textContent='Max rows reached'; }
+  }
+  function findPCard(n){ for(var i=0;i<pcards.length;i++) if(pcards[i].b===n) return pcards[i]; return null; }
+  function refreshPInputs(){
+    inputs=[];
+    pcards.forEach(function(card){
+      Array.prototype.forEach.call(card.el.querySelectorAll('input'),function(e){ inputs.push(e); });
+    });
+  }
+  function applyPCard(card){
+    var el=card.el;
+    el.classList.toggle('open',card.open);
+    el.classList.toggle('done',card.done);
+    el.querySelector('.tlabel').textContent='Powers of '+card.b+(card.done?'  ✓':'');
+    el.querySelector('.tdone').textContent=card.done?'Reopen':'Done';
+    el.querySelector('.tgl').setAttribute('aria-expanded',card.open?'true':'false');
+  }
+  function makePCard(card){
+    var b=card.b, k, h;
+    var el=document.createElement('div');
+    el.className='tcard'; el.dataset.b=b;
+    h='<div class="thead"><button type="button" class="tgl"><span class="car">▾</span> <span class="tlabel"></span></button>'+
+      '<span class="tstat"></span><button type="button" class="tdone">Done</button>'+
+      '<button type="button" class="tdel" aria-label="Remove powers of '+b+'">×</button></div>'+
+      '<div class="tbody"><table class="tbl pp"><tr><th class="corner">Sr no</th><th class="corner">Powers of '+b+'</th></tr>';
+    for(k=1;k<=card.rows;k++) h+=ppRowHtml(b,k);
+    h+='</table><button type="button" class="tadd">+ Add row</button></div>';
+    el.innerHTML=h;
+    card.el=el;
+    Array.prototype.forEach.call(el.querySelectorAll('input'),wirePp);
+    applyPCard(card);
+    return el;
+  }
+  function wirePp(inp){
+    function cell(r){
+      var el=inp.closest('.tcard');
+      return el?el.querySelector('input[data-r="'+r+'"]'):null;
+    }
+    inp.addEventListener('input',function(){
+      inp.value=inp.value.replace(/\D/g,'');
+      update();
+      if(isComplete(inp)){ var nx=cell(+inp.dataset.r+1); if(nx) nx.focus(); }
+    });
+    inp.addEventListener('focus',function(){ inp.select(); });
+    inp.addEventListener('keydown',function(e){
+      var r=+inp.dataset.r,t=null;
+      if(e.key==='ArrowDown')t=cell(r+1);
+      else if(e.key==='ArrowUp')t=cell(r-1);
+      else if(e.key==='Enter'){ checked=true; update(); return; }
+      else if(e.key==='Backspace'&&inp.value===''){ t=cell(r-1); }
+      if(t){ e.preventDefault(); t.focus(); }
+    });
+  }
+  function setPpTexts(){
+    document.getElementById('crumb').textContent='To Learn \u203a Powers of a number';
+    document.getElementById('title').textContent='Powers of a number';
+    document.getElementById('hint').textContent='Type a number from 2 to 99 and press Add number. Each number gets its own drop-down with 10 rows: Sr no 1 is the number itself, Sr no 2 is its square, Sr no 3 is its cube, up to the 10th power. The bar is red until all 10 rows are filled, then it turns green. Press Done to fold it away, click a bar to open or close it, and add as many numbers as you like. Need more than 10 powers? Press + Add row under the table.';
+  }
+  function addPCard(n){
+    if(!(n>=2&&n<=99)) return;
+    var ex=findPCard(n);
+    if(ex){
+      ex.open=true; applyPCard(ex);
+      ex.el.scrollIntoView({block:'nearest'});
+      var f=ex.el.querySelector('input'); if(f) f.focus();
+      return;
+    }
+    var card={b:n,rows:PP_ROWS,done:false,open:true};
+    pcards.push(card);
+    pblocks.appendChild(makePCard(card));
+    refreshPInputs();
+    update();
+    card.el.scrollIntoView({block:'nearest'});
+    var first=card.el.querySelector('input'); if(first) first.focus();
+    document.getElementById('opPn').value=Math.min(99,n+1);
+  }
+  function buildPp(){
+    checked=false; revealed=false;
+    setPpTexts();
+    if(!ppInit){ ppInit=true; addPCard(2); return; }
+    refreshPInputs();
+    update();
+  }
+
+  /* ---- To Learn: prime numbers up to 100 ---- */
+  function buildPr(){
+    checked=false; revealed=false;
+    var html='<tr><th class="corner">No.</th><th class="corner">Prime</th></tr>';
+    for(var i=0;i<PRIMES.length;i++){
+      html+='<tr><th>'+(i+1)+'</th><td><div class="cell"><input type="text" inputmode="numeric" maxlength="2" autocomplete="off" data-i="'+i+'" aria-label="Prime number '+(i+1)+'"><span class="ans"></span></div></td></tr>';
+    }
+    grid.className='pw';
+    grid.innerHTML=html;
+    inputs=Array.prototype.slice.call(grid.querySelectorAll('input'));
+    inputs.forEach(wirePow);
+    document.getElementById('crumb').textContent='To Learn › Prime numbers';
+    document.getElementById('title').textContent='Prime numbers up to 100';
+    document.getElementById('hint').textContent='There are 25 prime numbers up to 100. Type any prime in any box, in any order, but use each prime only once. Two-digit primes move on by themselves; for single-digit primes press Enter or the Down arrow. Check answers colors the cells; Show answers writes the primes you have not found yet beside the wrong or blank boxes.';
+    update();
+    focusFirst();
+  }
+
+  /* ---- Addition: 2 digit, 3 digit, 2 & 3 digit (a drop-down per set of sums) ---- */
+  var AD={a2:'2 digit',a3:'3 digit',a23:'2 & 3 digit',s2:'2 digit',s3:'3 digit',s23:'2 & 3 digit',m21:'2 × 1 digit',m22:'2 × 2 digit',m31:'3 × 1 digit',rnd:'Random mix',rsq:'Square',rcu:'Cube',rtb:'Table'}, acards={a2:[],a3:[],a23:[],s2:[],s3:[],s23:[],m21:[],m22:[],m31:[],rnd:[],rsq:[],rcu:[],rtb:[]}, ainit={}, aSeq={a2:0,a3:0,a23:0,s2:0,s3:0,s23:0,m21:0,m22:0,m31:0,rnd:0,rsq:0,rcu:0,rtb:0}, ablocks={};
+  ['a2','a3','a23','s2','s3','s23','m21','m22','m31','rnd','rsq','rcu','rtb'].forEach(function(v){
+    var d=document.createElement('div'); d.className='blocks ablocks hidden';
+    document.querySelector('.scroll').insertBefore(d,document.getElementById('pcAdd'));
+    ablocks[v]=d;
+  });
+  function isAd(){ return view==='a2'||view==='a3'||view==='a23'||view==='s2'||view==='s3'||view==='s23'||view==='m21'||view==='m22'||view==='m31'||view==='rnd'||view==='rsq'||view==='rcu'||view==='rtb'; }
+  function genRndQs(n){
+    var T=['a1','a2','a3','a23','s1','s2','s3','s23','m1','m21','m22','m31','q','c'], q=[],i,t,x,y,p;
+    for(i=0;i<n;i++){
+      t=T[rnd(0,T.length-1)];
+      if(t==='q') q.push([rnd(2,50),0,'q']);
+      else if(t==='c') q.push([rnd(2,25),0,'c']);
+      else if(t.length===2&&t.charAt(1)==='1'){
+        if(t==='a1') q.push([rnd(0,9),rnd(0,9),'a']);
+        else if(t==='m1') q.push([rnd(2,9),rnd(2,9),'m']);
+        else { x=rnd(0,9); y=rnd(0,9); if(x<y){ p=x; x=y; y=p; } if(x!==y&&Math.random()<0.5){ p=x; x=y; y=p; } q.push([x,y,'s']); }
+      } else { p=genQs(t,1)[0]; q.push([p[0],p[1],t.charAt(0)]); }
+    }
+    return q;
+  }
+  function famView(k){ var f=famOf(); if(f==='m') return {'2':'m21','3':'m22','23':'m31'}[k]; return f+k; }
+  function famOf(){ if(view==='sub'||(isAd()&&view.charAt(0)==='s')) return 's'; if(view==='mul'||(isAd()&&view.charAt(0)==='m')) return 'm'; return 'a'; }
+  function genMulQs(v,n){
+    var q=[],i,a,b,t;
+    for(i=0;i<n;i++){
+      if(v==='m21'){ a=rnd(10,99); b=rnd(2,9); }
+      else if(v==='m22'){ a=rnd(10,99); b=rnd(10,99); }
+      else { a=rnd(100,999); b=rnd(2,9); }
+      if(v!=='m22'&&Math.random()<0.5){ t=a; a=b; b=t; }
+      q.push([a,b]);
+    }
+    return q;
+  }
+  function rnd(lo,hi){ return lo+Math.floor(Math.random()*(hi-lo+1)); }
+  function adSub(){ return view.charAt(0)==='s'; }
+  function wireAd(inp){
+    function cell(r){
+      var el=inp.closest('.tcard');
+      return el?el.querySelector('input[data-r="'+r+'"]'):null;
+    }
+    inp.addEventListener('input',function(){
+      var v=inp.value.replace(/[^\d-]/g,'');
+      inp.value=(v.charAt(0)==='-'?'-':'')+v.replace(/-/g,'');
+      update();
+      if(isComplete(inp)){ var nx=cell(+inp.dataset.r+1); if(nx) nx.focus(); }
+    });
+    inp.addEventListener('focus',function(){ inp.select(); });
+    inp.addEventListener('keydown',function(e){
+      var r=+inp.dataset.r,t=null;
+      if(e.key==='ArrowDown')t=cell(r+1);
+      else if(e.key==='ArrowUp')t=cell(r-1);
+      else if(e.key==='Enter'){ checked=true; update(); return; }
+      else if(e.key==='Backspace'&&inp.value===''){ t=cell(r-1); }
+      if(t){ e.preventDefault(); t.focus(); }
+    });
+  }
+  function inSub(){ return view==='sub'||(isAd()&&adSub()); }
+  function genSubQs(v,n){
+    var q=[],i,a,b,t;
+    for(i=0;i<n;i++){
+      if(v==='s2'){ a=rnd(10,99); b=rnd(10,99); }
+      else if(v==='s3'){ a=rnd(100,999); b=rnd(100,999); }
+      else { a=rnd(100,999); b=rnd(10,99); }
+      if(a<b){ t=a; a=b; b=t; }
+      if(a!==b&&Math.random()<0.5){ t=a; a=b; b=t; }
+      q.push([a,b]);
+    }
+    return q;
+  }
+  function addARow(card){
+    if(card.qs.length>=60) return;
+    var q=genQs(card.v,1)[0];
+    card.qs.push(q);
+    var i=card.qs.length-1, tmp=document.createElement('tbody');
+    tmp.innerHTML=aRowHtml(q[0],q[1],i,q[2]||card.v.charAt(0));
+    var tr=tmp.firstChild, tb=card.el.querySelector('table.tbl');
+    (tb.querySelector('tbody')||tb).appendChild(tr);
+    var inp=tr.querySelector('input');
+    ((card.v.charAt(0)==='s'||card.v==='rnd')?wireAd:wirePp)(inp);
+    refreshAInputs();
+    update();
+    inp.focus();
+    if(card.qs.length>=60){ var btn=card.el.querySelector('.tadd'); btn.disabled=true; btn.textContent='Max rows reached'; }
+  }
+  function genQs(v,n){
+    if(v==='rtb'){ var tn=clamp(prefs.rtb.table,1,999), o2=[], pool=[]; while(o2.length<n){ if(!pool.length) pool=shuffleArr(range(1,10)); o2.push([tn,pool.pop(),'m']); } return o2; }
+    if(v==='rsq'||v==='rcu'){ var o=[],k; norm(v); for(k=0;k<n;k++) o.push(v==='rsq'?[rnd(prefs.rsq.from,prefs.rsq.to),0,'q']:[rnd(prefs.rcu.from,prefs.rcu.to),0,'c']); return o; }
+    if(v==='rnd') return genRndQs(n);
+    if(v.charAt(0)==='s') return genSubQs(v,n);
+    if(v.charAt(0)==='m') return genMulQs(v,n);
+    var q=[],i,a,b,t;
+    for(i=0;i<n;i++){
+      if(v==='a2'){ a=rnd(10,99); b=rnd(10,99); }
+      else if(v==='a3'){ a=rnd(100,999); b=rnd(100,999); }
+      else { a=rnd(10,99); b=rnd(100,999); if(Math.random()<0.5){ t=a; a=b; b=t; } }
+      q.push([a,b]);
+    }
+    return q;
+  }
+  function findACard(v,n){ for(var i=0;i<acards[v].length;i++) if(acards[v][i].n===n) return acards[v][i]; return null; }
+  function refreshAInputs(){
+    inputs=[];
+    acards[view].forEach(function(card){
+      Array.prototype.forEach.call(card.el.querySelectorAll('input'),function(e){ inputs.push(e); });
+    });
+  }
+  function applyACard(card){
+    var el=card.el;
+    el.classList.toggle('open',card.open);
+    el.classList.toggle('done',card.done);
+    el.querySelector('.tlabel').textContent=AD[card.v]+' · Set '+card.n+(card.done?'  ✓':'');
+    el.querySelector('.tdone').textContent=card.done?'Reopen':'Done';
+    el.querySelector('.tgl').setAttribute('aria-expanded',card.open?'true':'false');
+  }
+  function aRowHtml(a,b,i,op){
+    var sub=(op==='s');
+    if(op==='q'||op==='c'){ var res=String(Math.pow(a,op==='q'?2:3)); return '<tr><td class="tn">'+(i+1)+'</td><td class="tq">'+a+(op==='q'?'²':'³')+' =</td><td><div class="cell"><input type="text" inputmode="numeric" maxlength="'+res.length+'" autocomplete="off" data-a="'+a+'" data-b="0" data-o="'+op+'" data-r="'+i+'" aria-label="'+(op==='q'?'Square':'Cube')+' of '+a+'"><span class="ans"></span></div></td></tr>'; }
+    if(op==='m') return '<tr><td class="tn">'+(i+1)+'</td><td class="tq">'+a+' × '+b+' =</td><td><div class="cell"><input type="text" inputmode="numeric" maxlength="'+String(a*b).length+'" autocomplete="off" data-a="'+a+'" data-b="'+b+'" data-o="*" data-r="'+i+'" aria-label="'+a+' times '+b+'"><span class="ans"></span></div></td></tr>';
+    if(sub) return '<tr><td class="tn">'+(i+1)+'</td><td class="tq">'+a+' − '+b+' =</td><td><div class="cell"><input type="text" inputmode="'+(a<b?'text':'numeric')+'" maxlength="'+String(a-b).length+'" autocomplete="off" data-a="'+a+'" data-b="'+b+'" data-o="-" data-r="'+i+'" aria-label="'+a+' minus '+b+'"><span class="ans"></span></div></td></tr>';
+    return '<tr><td class="tn">'+(i+1)+'</td><td class="tq">'+a+' + '+b+' =</td><td><div class="cell"><input type="text" inputmode="numeric" maxlength="'+String(a+b).length+'" autocomplete="off" data-a="'+a+'" data-b="'+b+'" data-r="'+i+'" aria-label="'+a+' plus '+b+'"><span class="ans"></span></div></td></tr>';
+  }
+  function makeACard(card){
+    var el=document.createElement('div'), i, h;
+    el.className='tcard'; el.dataset.n=card.n;
+    h='<div class="thead"><button type="button" class="tgl"><span class="car">▾</span> <span class="tlabel"></span></button>'+
+      '<span class="tstat"></span><button type="button" class="tdone">Done</button>'+
+      '<button type="button" class="tdel" aria-label="Remove set '+card.n+'">×</button></div>'+
+      '<div class="tbody"><table class="tbl ad"><tr><th class="corner">No.</th><th class="corner">Question</th><th class="corner">Answer</th></tr>';
+    for(i=0;i<card.qs.length;i++) h+=aRowHtml(card.qs[i][0],card.qs[i][1],i,card.qs[i][2]||card.v.charAt(0));
+    h+='</table><button type="button" class="tadd">+ Add row</button></div>';
+    el.innerHTML=h;
+    card.el=el;
+    Array.prototype.forEach.call(el.querySelectorAll('input'),(card.v.charAt(0)==='s'||card.v==='rnd')?wireAd:wirePp);
+    applyACard(card);
+    return el;
+  }
+  function addASet(){
+    var box=document.getElementById('opQn');
+    var n=clamp(parseInt(box.value,10)||10,1,30);
+    box.value=n;
+    var card={v:view,n:++aSeq[view],qs:genQs(view,n),done:false,open:true};
+    acards[view].push(card);
+    ablocks[view].appendChild(makeACard(card));
+    refreshAInputs();
+    update();
+    card.el.scrollIntoView({block:'nearest'});
+    var f=card.el.querySelector('input'); if(f) f.focus();
+  }
+  function renderAllA(){
+    ablocks[view].innerHTML='';
+    acards[view].forEach(function(card){
+      card.qs=genQs(view,card.qs.length); card.done=false; card.open=true;
+      ablocks[view].appendChild(makeACard(card));
+    });
+    checked=false; revealed=false;
+    refreshAInputs();
+    update();
+  }
+  function showAd(){
+    document.getElementById('crumb').textContent='Speed Maths › '+(adSub()?'Subtraction':(view.charAt(0)==='m'?'Multiplication':'Addition'))+' › '+AD[view];
+    document.getElementById('title').textContent=AD[view]+(adSub()?' subtraction':(view.charAt(0)==='m'?' multiplication':' addition'));
+    document.getElementById('hint').textContent=(adSub()?(view==='s23'?'Each question uses a 2 digit and a 3 digit number, and half the time the 2 digit number comes first, so the answer is negative: type the minus sign first (like 45 − 312 = -267). ':'Each question subtracts one '+AD[view]+' number from another, and half the time the smaller number comes first, so the answer is negative: type the minus sign first (like 23 − 58 = -35). '):(view.charAt(0)==='m'?(view==='m22'?'Each question multiplies two 2 digit numbers. ':'Each question multiplies a '+(view==='m21'?'2':'3')+' digit number by a single digit number, and half the time the single digit number comes first. '):view==='a23'?'Each question adds a 2 digit number and a 3 digit number. ':'Each question adds two '+AD[view]+' numbers. '))+'Set how many questions you want, then press Add set. Every set is its own drop-down with fresh random numbers, and you can add as many sets as you like. Type the answer in the box; it moves on by itself. A set bar stays red until every box is filled, then turns green. Press Done to fold a set away, click a bar to open or close it, press + Add row inside a set for one more question, and press New numbers to get a fresh set of questions.';
+    checked=false; revealed=false;
+    if(view==='rnd'){
+      document.getElementById('crumb').textContent='Random';
+      document.getElementById('title').textContent='Random mix of everything';
+      document.getElementById('hint').textContent='Every question in a set is picked at random from all the types: addition, subtraction, multiplication, squares and cubes, with one, two and three digit numbers. Subtraction questions can have a negative answer, so type the minus sign first (like 23 − 58 = -35). Set how many questions you want, then press Add set. Each set is its own drop-down. A set bar stays red until every box is filled, then turns green. Press Done to fold a set away, press + Add row inside a set for one more question, and press New numbers to get fresh questions.';
+    }
+    if(view==='rsq'||view==='rcu'||view==='rtb'){
+      var nm={rsq:'Square',rcu:'Cube',rtb:'Table'}[view];
+      document.getElementById('crumb').textContent='Random › '+nm;
+      document.getElementById('title').textContent='Random '+nm.toLowerCase()+' questions';
+      document.getElementById('hint').textContent=(view==='rsq'?'Each question is the square of a random number in the range set above (the range applies to new sets and New numbers). ':(view==='rcu'?'Each question is the cube of a random number in the range set above (the range applies to new sets and New numbers). ':'Type the table you want in Select table and its questions appear in random order (10 questions per set = the whole table once). '))+'Set how many questions you want, then press Add set. Each set is its own drop-down. A set bar stays red until every box is filled, then turns green. Press Done to fold a set away, press + Add row inside a set for one more question, and press New numbers to get fresh questions.';
+    }
+    if(!ainit[view]){ ainit[view]=true; addASet(); return; }
+    refreshAInputs();
+    update();
+  }
+  Object.keys(ablocks).forEach(function(v){
+    ablocks[v].addEventListener('click',function(e){
+      var t=e.target.closest('button'); if(!t) return;
+      var el=t.closest('.tcard'); if(!el) return;
+      var card=findACard(v,+el.dataset.n); if(!card) return;
+      if(t.classList.contains('tadd')){ addARow(card); return; }
+      if(t.classList.contains('tgl')){ card.open=!card.open; }
+      else if(t.classList.contains('tdone')){
+        if(card.done){ card.done=false; card.open=true; } else { card.done=true; card.open=false; }
+      }
+      else if(t.classList.contains('tdel')){
+        if(t.dataset.armed){ acards[v].splice(acards[v].indexOf(card),1); el.remove(); refreshAInputs(); update(); }
+        else { t.dataset.armed='1'; t.textContent='Remove?'; setTimeout(function(){ delete t.dataset.armed; t.textContent='×'; },3000); }
+        return;
+      }
+      applyACard(card);
+    });
+  });
+
+  /* ---- Random: drop-downs (Square, Cube, Table 11-20, Table 21-30, Fraction) ---- */
+  var rxblocks=document.createElement('div'), rxcards=[], rxInit=false;
+  rxblocks.className='blocks hidden';
+  document.querySelector('.scroll').insertBefore(rxblocks,document.getElementById('pcAdd'));
+  function isRx(){ return view==='rx'; }
+  var RXD=[
+    {id:'sq',name:'Square',head:'Number',t:'i',mk:function(){ return range(1,30).map(function(n){ return {q:n+'\u00b2',k:String(n*n)}; }); }},
+    {id:'cu',name:'Cube',head:'Number',t:'i',mk:function(){ return range(1,20).map(function(n){ return {q:n+'\u00b3',k:String(n*n*n)}; }); }},
+    {id:'t1',name:'Table (11\u201320)',head:'Question',t:'i',mk:function(){ return range(11,20).map(function(n){ var m=rnd(2,10); return {q:n+' \u00d7 '+m,k:String(n*m)}; }); }},
+    {id:'t2',name:'Table (21\u201330)',head:'Question',t:'i',mk:function(){ return range(21,30).map(function(n){ var m=rnd(2,10); return {q:n+' \u00d7 '+m,k:String(n*m)}; }); }},
+    {id:'fr',name:'Fraction',head:'Fraction \u2192 %',t:'p',mk:function(){ return range(2,20).map(function(n){ return {q:'1/'+n,k:String(+(100/n).toFixed(2))}; }); }}
+  ];
+  function rxOk(inp){
+    var v=inp.value.trim(), k=inp.dataset.k;
+    if(v==='') return false;
+    if(inp.dataset.t==='p'){
+      if(!/^\d+(\.\d+)?$/.test(v)) return false;
+      return Math.abs(parseFloat(v)-parseFloat(k))<0.0100001;
+    }
+    return +v===+k;
+  }
+  function rxComplete(inp){
+    var v=inp.value.trim();
+    if(v==='') return false;
+    if(inp.dataset.t==='p') return rxOk(inp)||inp!==document.activeElement;
+    return v.length>=inp.dataset.k.length;
+  }
+  function refreshRxInputs(){
+    var K=prefs.rx.rounds;
+    inputs=[];
+    rxcards.forEach(function(card){
+      for(var c=0;c<K;c++) for(var r=0;r<card.rows.length;r++){
+        var e=card.el.querySelector('input[data-c="'+c+'"][data-r="'+r+'"]');
+        if(e) inputs.push(e);
+      }
+    });
+  }
+  function applyRxCard(card){
+    var el=card.el;
+    el.classList.toggle('open',card.open);
+    el.classList.toggle('done',card.done);
+    el.querySelector('.tlabel').textContent=card.def.name+(card.done?'  \u2713':'');
+    el.querySelector('.tdone').textContent=card.done?'Reopen':'Done';
+    el.querySelector('.tgl').setAttribute('aria-expanded',card.open?'true':'false');
+  }
+  function wireRx(inp){
+    function cell(c,r){
+      var el=inp.closest('.tcard');
+      return el?el.querySelector('input[data-c="'+c+'"][data-r="'+r+'"]'):null;
+    }
+    inp.addEventListener('input',function(){
+      inp.value=inp.value.replace(inp.dataset.t==='p'?/[^0-9.]/g:/\D/g,'');
+      update();
+      if(inp.dataset.t==='p'?rxOk(inp):isComplete(inp)){
+        var c=+inp.dataset.c,r=+inp.dataset.r;
+        var next=cell(c,r+1)||cell(c+1,0);
+        if(next) next.focus();
+      }
+    });
+    inp.addEventListener('focus',function(){ inp.select(); });
+    inp.addEventListener('blur',function(){ setTimeout(update,0); });
+    inp.addEventListener('keydown',function(e){
+      var c=+inp.dataset.c,r=+inp.dataset.r,t=null;
+      if(e.key==='ArrowDown')t=cell(c,r+1);
+      else if(e.key==='ArrowUp')t=cell(c,r-1);
+      else if(e.key==='ArrowRight')t=cell(c+1,r);
+      else if(e.key==='ArrowLeft')t=cell(c-1,r);
+      else if(e.key==='Enter'){ checked=true; update(); return; }
+      else if(e.key==='Backspace'&&inp.value===''){ t=cell(c,r-1)||cell(c-1,inp.closest('table').querySelectorAll('input[data-c="0"]').length-1); }
+      if(t){ e.preventDefault(); t.focus(); }
+    });
+  }
+  function makeRxCard(card){
+    var K=prefs.rx.rounds, def=card.def, el=document.createElement('div'), h, c, r, row;
+    el.className='tcard'; el.dataset.id=def.id;
+    h='<div class="thead"><button type="button" class="tgl"><span class="car">\u25be</span> <span class="tlabel"></span></button>'+
+      '<span class="tstat"></span><button type="button" class="tdone">Done</button></div>'+
+      '<div class="tbody"><table class="tbl"><tr><th class="corner">'+def.head+'</th><th class="corner" colspan="'+K+'">Rounds</th></tr><tr><td></td>';
+    for(c=0;c<K;c++) h+='<th class="sub">c'+(c+1)+'</th>';
+    h+='</tr>';
+    for(r=0;r<card.rows.length;r++){
+      row=card.rows[r];
+      h+='<tr><td class="tq">'+row.q+'</td>';
+      for(c=0;c<K;c++){
+        h+='<td><div class="cell"><input type="text" inputmode="'+(def.t==='p'?'decimal':'numeric')+'" maxlength="'+(def.t==='p'?6:row.k.length)+'" autocomplete="off" data-k="'+row.k+'" data-t="'+def.t+'" data-c="'+c+'" data-r="'+r+'" aria-label="'+row.q+', column '+(c+1)+'"><span class="ans"></span></div></td>';
+      }
+      h+='</tr>';
+    }
+    h+='</table></div>';
+    el.innerHTML=h;
+    card.el=el;
+    Array.prototype.forEach.call(el.querySelectorAll('input'),wireRx);
+    applyRxCard(card);
+    return el;
+  }
+  function setRxTexts(){
+    document.getElementById('crumb').textContent='Random \u203a Drop-downs';
+    document.getElementById('title').textContent='Random drop-downs';
+    document.getElementById('inorder').textContent='In order';
+    document.getElementById('hint').textContent='Five drop-downs: Square (1\u201330), Cube (1\u201320), Table (11\u201320), Table (21\u201330) and Fraction (1/2 to 1/20, answer as a percentage like 33.33). Fill c1 to c'+prefs.rx.rounds+' (each is a full round). A bar stays red until every box is filled, then turns green. Press Done to fold it away and click a bar to open or close it. Rounds can be changed above; New random order shuffles every drop-down (the table questions get new multipliers).';
+  }
+  function renderRx(random){
+    norm('rx');
+    rxblocks.innerHTML='';
+    rxcards.forEach(function(card){
+      card.rows=card.def.mk();
+      if(random) shuffleArr(card.rows);
+      card.done=false;
+      rxblocks.appendChild(makeRxCard(card));
+    });
+    checked=false; revealed=false;
+    refreshRxInputs();
+    setRxTexts();
+    update();
+  }
+  function showRx(){
+    if(!rxInit){
+      rxInit=true;
+      rxcards=RXD.map(function(d,i){ return {def:d,rows:[],done:false,open:i===0}; });
+      renderRx(true);
+      return;
+    }
+    setRxTexts();
+    checked=false; revealed=false;
+    refreshRxInputs();
+    update();
+  }
+  rxblocks.addEventListener('click',function(e){
+    var t=e.target.closest('button'); if(!t) return;
+    var el=t.closest('.tcard'); if(!el) return;
+    var card=null;
+    rxcards.forEach(function(c){ if(c.def.id===el.dataset.id) card=c; });
+    if(!card) return;
+    if(t.classList.contains('tgl')){ card.open=!card.open; }
+    else if(t.classList.contains('tdone')){
+      if(card.done){ card.done=false; card.open=true; } else { card.done=true; card.open=false; }
+    }
+    applyRxCard(card);
+  });
+
+  /* ---- Tables: one drop-down card per table the user adds ---- */
+  function findCard(n){ for(var i=0;i<tcards.length;i++) if(tcards[i].n===n) return tcards[i]; return null; }
+
+  function refreshInputs(){
+    var R=prefs.tb.sr, K=prefs.tb.rounds;
+    inputs=[];
+    tcards.forEach(function(card){
+      for(var c=0;c<K;c++) for(var r=0;r<R;r++){
+        var e=card.el.querySelector('input[data-c="'+c+'"][data-r="'+r+'"]');
+        if(e) inputs.push(e);
+      }
+    });
+  }
+
+  function applyCardState(card){
+    var el=card.el;
+    el.classList.toggle('open',card.open);
+    el.classList.toggle('done',card.done);
+    el.querySelector('.tlabel').textContent='Table of '+card.n+(card.done?'  ✓':'');
+    el.querySelector('.tdone').textContent=card.done?'Reopen':'Done';
+    el.querySelector('.tgl').setAttribute('aria-expanded',card.open?'true':'false');
+  }
+
+  function makeCard(card){
+    var R=prefs.tb.sr, K=prefs.tb.rounds, n=card.n, ms=card.ms, maxLen=String(n*R).length, c, r;
+    var el=document.createElement('div');
+    el.className='tcard'; el.dataset.n=n;
+    var h='<div class="thead"><button type="button" class="tgl"><span class="car">▾</span> <span class="tlabel"></span></button>'+
+      '<span class="tstat"></span><button type="button" class="tdone">Done</button>'+
+      '<button type="button" class="tdel" aria-label="Remove table '+n+'">×</button></div>'+
+      '<div class="tbody"><table class="tbl"><tr><th class="corner">Sr no</th><th class="corner" colspan="'+K+'">'+n+'</th></tr><tr><td></td>';
+    for(c=0;c<K;c++) h+='<th class="sub">c'+(c+1)+'</th>';
+    h+='</tr>';
+    for(r=0;r<R;r++){
+      h+='<tr><td class="tn">'+ms[r]+'</td>';
+      for(c=0;c<K;c++){
+        h+='<td><div class="cell"><input type="text" inputmode="numeric" maxlength="'+maxLen+'" autocomplete="off" data-t="'+n+'" data-m="'+ms[r]+'" data-c="'+c+'" data-r="'+r+'" aria-label="'+n+' times '+ms[r]+', column '+(c+1)+'"><span class="ans"></span></div></td>';
+      }
+      h+='</tr>';
+    }
+    h+='</table></div>';
+    el.innerHTML=h;
+    card.el=el;
+    Array.prototype.forEach.call(el.querySelectorAll('input'),wireTb);
+    applyCardState(card);
+    return el;
+  }
+
+  function setTbTexts(){
+    var R=prefs.tb.sr, K=prefs.tb.rounds;
+    document.getElementById('crumb').textContent='Tables';
+    document.getElementById('title').textContent='Tables';
+    document.getElementById('inorder').textContent='In order (×1–'+R+')';
+    document.getElementById('hint').textContent='Type a table number (for example 11) and press Add table. Fill c1 to c'+K+' (each is a full round of that table). A table bar stays red until every box is filled, then turns green. Press Done to fold it away. Click a bar to open or close it, and add as many tables as you like. Sr no limit and rounds can be changed above.';
+  }
+
+  function addTable(n){
+    if(!(n>=1&&n<=999)) return;
+    var ex=findCard(n);
+    if(ex){
+      ex.open=true; applyCardState(ex);
+      ex.el.scrollIntoView({block:'nearest'});
+      var f=ex.el.querySelector('input'); if(f) f.focus();
+      return;
+    }
+    var card={n:n,ms:range(1,prefs.tb.sr),done:false,open:true};
+    tcards.push(card);
+    blocks.appendChild(makeCard(card));
+    refreshInputs();
+    update();
+    card.el.scrollIntoView({block:'nearest'});
+    var first=card.el.querySelector('input'); if(first) first.focus();
+    document.getElementById('opTable').value=n+1;
+  }
+
+  function renderAll(random){
+    norm('tb');
+    var R=prefs.tb.sr;
+    blocks.innerHTML='';
+    tcards.forEach(function(card){
+      card.ms=range(1,R); if(random) shuffleArr(card.ms);
+      card.done=false; card.open=true;
+      blocks.appendChild(makeCard(card));
+    });
+    checked=false; revealed=false;
+    refreshInputs();
+    setTbTexts();
+    update();
+  }
+
+  function showTb(){
+    setTbTexts();
+    if(!tbInit){ tbInit=true; addTable(11); return; }
+    refreshInputs();
+    checked=false; revealed=false;
+    update();
+  }
+
+  blocks.addEventListener('click',function(e){
+    var t=e.target.closest('button'); if(!t) return;
+    var el=t.closest('.tcard'); if(!el) return;
+    var card=findCard(+el.dataset.n); if(!card) return;
+    if(t.classList.contains('tgl')){ card.open=!card.open; }
+    else if(t.classList.contains('tdone')){
+      if(card.done){ card.done=false; card.open=true; }
+      else { card.done=true; card.open=false; }
+    }
+    else if(t.classList.contains('tdel')){
+      if(t.dataset.armed){
+        tcards.splice(tcards.indexOf(card),1);
+        el.remove(); refreshInputs(); update();
+      } else {
+        t.dataset.armed='1'; t.textContent='Remove?';
+        setTimeout(function(){ delete t.dataset.armed; t.textContent='×'; },3000);
+      }
+      return;
+    }
+    applyCardState(card);
+  });
+
+  function build(){
+    if(isPr()) buildPr();
+    else if(isPow()) buildPow(true);
+    else if(isTb()) renderAll(true);
+    else if(isAd()) renderAllA();
+    else if(isRx()) renderRx(true);
+    else buildMath();
+  }
+
+  function update(){
+    var answered=0,right=0,wrong=0,S=evalSpecial();
+    inputs.forEach(function(inp,idx){
+      inp.classList.remove('ok','bad','tok','tbad');
+      var badge=inp.nextElementSibling;
+      badge.textContent=''; badge.className='ans';
+      if(!isComplete(inp)){
+        if(revealed && !((isPc()||isPf())&&inp.dataset.c==='m'&&inp.value.trim()==='')){ badge.textContent=isSpecial()?(S.rev[idx]||''):ansOf(inp); badge.classList.add('m'); }
+        return;
+      }
+      answered++;
+      var good=isSpecial()?S.good[idx]:(isRx()?rxOk(inp):(+inp.value===ansOf(inp)));
+      if(good) right++; else wrong++;
+      inp.classList.add(good?'tok':'tbad');
+      if(checked) inp.classList.add(good?'ok':'bad');
+      if(revealed && !good){ badge.textContent=isSpecial()?(S.rev[idx]||''):ansOf(inp); badge.classList.add('w'); }
+    });
+    if(isTb()){
+      tcards.forEach(function(card){
+        var all=card.el.querySelectorAll('input'), n=0;
+        Array.prototype.forEach.call(all,function(i){ if(isComplete(i)) n++; });
+        card.el.querySelector('.tstat').textContent=n+' / '+all.length;
+        card.el.classList.toggle('full',all.length>0&&n===all.length);
+      });
+    }
+    if(isPp()){
+      pcards.forEach(function(card){
+        var all=card.el.querySelectorAll('input'), n=0;
+        Array.prototype.forEach.call(all,function(i){ if(isComplete(i)) n++; });
+        card.el.querySelector('.tstat').textContent=n+' / '+all.length;
+        card.el.classList.toggle('full',all.length>0&&n===all.length);
+      });
+    }
+    if(isPf()){
+      fcards.forEach(function(card){
+        var ps=card.el.querySelectorAll('input[data-c="p"]'), n=0;
+        Array.prototype.forEach.call(ps,function(i){ if(isComplete(i)) n++; });
+        card.el.querySelector('.tstat').textContent=n+' / '+ps.length;
+        card.el.classList.toggle('full',ps.length>0&&n===ps.length);
+      });
+    }
+    if(isAd()){
+      acards[view].forEach(function(card){
+        var all=card.el.querySelectorAll('input'), n=0;
+        Array.prototype.forEach.call(all,function(i){ if(isComplete(i)) n++; });
+        card.el.querySelector('.tstat').textContent=n+' / '+all.length;
+        card.el.classList.toggle('full',all.length>0&&n===all.length);
+      });
+    }
+    if(isRx()){
+      rxcards.forEach(function(card){
+        var all=card.el.querySelectorAll('input'), n=0;
+        Array.prototype.forEach.call(all,function(i){ if(isComplete(i)) n++; });
+        card.el.querySelector('.tstat').textContent=n+' / '+all.length;
+        card.el.classList.toggle('full',all.length>0&&n===all.length);
+      });
+    }
+    document.getElementById('answered').textContent=answered;
+    document.getElementById('total').textContent=String((isPc()||isPf())?inputs.filter(function(i){ return !(i.dataset.c==='m'&&i.value.trim()===''); }).length:inputs.length);
+    document.getElementById('right').textContent=right;
+    document.getElementById('wrong').textContent=wrong;
+  }
+
+  function wireMath(inp){
+    inp.addEventListener('input',function(){
+      inp.value=inp.value.replace(/\D/g,'');
+      update();
+      if(isComplete(inp)){
+        var r=+inp.dataset.r,c=+inp.dataset.c;
+        var next=c<N-1?at(r,c+1):(r<N-1?at(r+1,0):null);
+        if(next) next.focus();
+      }
+    });
+    inp.addEventListener('focus',function(){ inp.select(); });
+    inp.addEventListener('keydown',function(e){
+      var r=+inp.dataset.r,c=+inp.dataset.c,t=null;
+      if(e.key==='ArrowRight'&&c<N-1)t=at(r,c+1);
+      else if(e.key==='ArrowLeft'&&c>0)t=at(r,c-1);
+      else if(e.key==='ArrowDown'&&r<N-1)t=at(r+1,c);
+      else if(e.key==='ArrowUp'&&r>0)t=at(r-1,c);
+      else if(e.key==='Enter'){ checked=true; update(); return; }
+      else if(e.key==='Backspace'&&inp.value===''&&c>0){ t=at(r,c-1); }
+      if(t){ e.preventDefault(); t.focus(); }
+    });
+  }
+
+  function wirePow(inp){
+    inp.addEventListener('input',function(){
+      inp.value=inp.value.replace(/\D/g,'');
+      update();
+      if(isComplete(inp)){
+        var i=+inp.dataset.i;
+        if(i<inputs.length-1) inputs[i+1].focus();
+      }
+    });
+    inp.addEventListener('blur',function(){ if(isPr()) setTimeout(update,0); });
+    inp.addEventListener('focus',function(){ inp.select(); });
+    inp.addEventListener('keydown',function(e){
+      var i=+inp.dataset.i,t=null;
+      if(e.key==='ArrowDown'&&i<inputs.length-1)t=inputs[i+1];
+      else if(e.key==='ArrowUp'&&i>0)t=inputs[i-1];
+      else if(e.key==='Enter'){ if(isPr()&&i<inputs.length-1){ t=inputs[i+1]; } else { checked=true; update(); return; } }
+      else if(e.key==='Backspace'&&inp.value===''&&i>0){ t=inputs[i-1]; }
+      if(t){ e.preventDefault(); t.focus(); }
+    });
+  }
+
+  function wireTb(inp){
+    function cell(c,r){
+      var el=inp.closest('.tcard');
+      return el?el.querySelector('input[data-c="'+c+'"][data-r="'+r+'"]'):null;
+    }
+    inp.addEventListener('input',function(){
+      inp.value=inp.value.replace(/\D/g,'');
+      update();
+      if(isComplete(inp)){
+        var c=+inp.dataset.c,r=+inp.dataset.r;
+        var next=cell(c,r+1)||cell(c+1,0);
+        if(next) next.focus();
+      }
+    });
+    inp.addEventListener('focus',function(){ inp.select(); });
+    inp.addEventListener('keydown',function(e){
+      var c=+inp.dataset.c,r=+inp.dataset.r,t=null;
+      if(e.key==='ArrowDown')t=cell(c,r+1);
+      else if(e.key==='ArrowUp')t=cell(c,r-1);
+      else if(e.key==='ArrowRight')t=cell(c+1,r);
+      else if(e.key==='ArrowLeft')t=cell(c-1,r);
+      else if(e.key==='Enter'){ checked=true; update(); return; }
+      else if(e.key==='Backspace'&&inp.value===''){ t=cell(c,r-1)||cell(c-1,prefs.tb.sr-1); }
+      if(t){ e.preventDefault(); t.focus(); }
+    });
+  }
+
+  function setView(v){
+    view=v;
+    var pw=isPow(), tb=isTb(), pr=isSpecial(), ad=isAd(), rn=(v==='rnd'||v==='rx'||v==='rsq'||v==='rcu'||v==='rtb'), rx=(v==='rx'), math=!pw&&!tb&&!pr&&!ad&&!rx;
+    document.getElementById('cat-learn').classList.toggle('active',pr);
+    document.getElementById('learntabs').classList.toggle('hidden',!pr);
+    document.getElementById('shuffle').classList.toggle('hidden',pr);
+    document.getElementById('cat-math').classList.toggle('active',math||(ad&&!rn));
+    document.getElementById('cat-rnd').classList.toggle('active',rn);
+    document.getElementById('rndtabs').classList.toggle('hidden',!rn);
+    document.getElementById('tab-rsq').classList.toggle('active',v==='rsq');
+    document.getElementById('tab-rtb').classList.toggle('active',v==='rtb');
+    document.getElementById('tab-rcu').classList.toggle('active',v==='rcu');
+    document.getElementById('shuffle').textContent=ad?'New numbers':'New random order';
+    document.getElementById('cat-sq').classList.toggle('active',v==='sq');
+    document.getElementById('cat-cu').classList.toggle('active',v==='cu');
+    document.getElementById('cat-tb').classList.toggle('active',tb);
+    document.getElementById('subtabs').classList.toggle('hidden',!(math||(ad&&!rn)));
+    document.getElementById('picker').classList.toggle('hidden',math||(pr&&!isPp()&&!isPf()));
+    document.getElementById('inorder').classList.toggle('hidden',math||pr||ad);
+    var subf=(v==='sub'||(ad&&adSub())), mulf=(v==='mul'||(ad&&v.charAt(0)==='m'));
+    document.getElementById('tab-add').classList.toggle('active',v==='add'||(ad&&!subf&&!mulf&&!rn));
+    document.getElementById('addtabs').classList.toggle('hidden',!(v==='add'||v==='sub'||v==='mul'||(ad&&!rn)));
+    (function(){
+      var host=document.getElementById(mulf?'tab-mul':(subf?'tab-sub':'tab-add')), at=document.getElementById('addtabs');
+      if(host.nextElementSibling!==at) host.after(at);
+    })();
+    document.getElementById('tab-a1').classList.toggle('active',v==='add'||v==='sub'||v==='mul');
+    document.getElementById('tab-a2').classList.toggle('active',v==='a2'||v==='s2'||v==='m21');
+    document.getElementById('tab-a3').classList.toggle('active',v==='a3'||v==='s3'||v==='m22');
+    document.getElementById('tab-a23').classList.toggle('active',v==='a23'||v==='s23'||v==='m31');
+    document.getElementById('tab-sub').classList.toggle('active',subf);
+    document.getElementById('tab-mul').classList.toggle('active',mulf);
+    document.getElementById('tab-a2').textContent=mulf?'2 × 1 digit':'2 digit';
+    document.getElementById('tab-a3').textContent=mulf?'2 × 2 digit':'3 digit';
+    document.getElementById('tab-a23').textContent=mulf?'3 × 1 digit':'2 & 3 digit';
+    document.getElementById('tab-prime').classList.toggle('active',v==='pr');
+    document.getElementById('tab-twin').classList.toggle('active',v==='tw');
+    document.getElementById('tab-pow').classList.toggle('active',v==='pp');
+    document.getElementById('tab-pc').classList.toggle('active',v==='pc');
+    document.getElementById('tab-pf').classList.toggle('active',v==='pf');
+    document.getElementById('pcAdd').classList.toggle('hidden',v!=='pc');
+    grid.classList.toggle('hidden',tb||isPp()||isPf()||ad||rx);
+    rxblocks.classList.toggle('hidden',!rx);
+    Object.keys(ablocks).forEach(function(k){ ablocks[k].classList.toggle('hidden',k!==v); });
+    blocks.classList.toggle('hidden',!tb);
+    pblocks.classList.toggle('hidden',!isPp());
+    fblocks.classList.toggle('hidden',!isPf());
+    if((!math&&!pr&&!ad)||v==='rsq'||v==='rcu'||v==='rtb') loadOpts();
+    document.getElementById('g-aq').classList.toggle('hidden',!ad);
+    if(ad){ ['g-range','g-add','g-sr','g-rounds','g-pn','g-pf'].forEach(function(id){ document.getElementById(id).classList.add('hidden'); }); }
+    if(v==='rsq'||v==='rcu') document.getElementById('g-range').classList.remove('hidden');
+    document.getElementById('g-rt').classList.toggle('hidden',v!=='rtb');
+    if(v==='rtb') document.getElementById('opRt').value=prefs.rtb.table;
+    if(isPp()||isPf()){
+      ['g-range','g-add','g-sr','g-rounds'].forEach(function(id){ document.getElementById(id).classList.add('hidden'); });
+      document.getElementById('g-pn').classList.toggle('hidden',!isPp());
+      document.getElementById('g-pf').classList.toggle('hidden',!isPf());
+    }
+    if(isPr()) buildPr(); else if(isTw()) buildTw(); else if(isPp()) buildPp(); else if(isPc()) buildPc(); else if(isPf()) buildPf(); else if(ad) showAd(); else if(rx) showRx(); else if(pw) buildPow(false); else if(tb) showTb(); else buildMath();
+  }
+
+  document.getElementById('cat-math').onclick=function(){ setView('add'); };
+  document.getElementById('cat-sq').onclick=function(){ setView('sq'); };
+  document.getElementById('cat-cu').onclick=function(){ setView('cu'); };
+  document.getElementById('cat-tb').onclick=function(){ setView('tb'); };
+  document.getElementById('cat-learn').onclick=function(){ setView('pr'); };
+  document.getElementById('cat-rnd').onclick=function(){ setView('rsq'); };
+  document.getElementById('tab-rsq').onclick=function(){ setView('rsq'); };
+  document.getElementById('tab-rtb').onclick=function(){ setView('rtb'); };
+  document.getElementById('tab-rcu').onclick=function(){ setView('rcu'); };
+  document.getElementById('tab-prime').onclick=function(){ setView('pr'); };
+  document.getElementById('tab-twin').onclick=function(){ setView('tw'); };
+  document.getElementById('tab-pow').onclick=function(){ setView('pp'); };
+  document.getElementById('tab-pc').onclick=function(){ setView('pc'); };
+  document.getElementById('tab-pf').onclick=function(){ setView('pf'); };
+  document.getElementById('pcAdd').onclick=function(){ addPcRow(); };
+  document.getElementById('tab-add').onclick=function(){ setView('add'); };
+  document.getElementById('tab-sub').onclick=function(){ setView('sub'); };
+  document.getElementById('tab-mul').onclick=function(){ setView('mul'); };
+  document.getElementById('tab-a1').onclick=function(){ setView({a:'add',s:'sub',m:'mul'}[famOf()]); };
+  document.getElementById('tab-a2').onclick=function(){ setView(famView('2')); };
+  document.getElementById('tab-a3').onclick=function(){ setView(famView('3')); };
+  document.getElementById('tab-a23').onclick=function(){ setView(famView('23')); };
+  document.getElementById('opAq').onclick=function(){ addASet(); };
+  document.getElementById('opRt').addEventListener('input',function(){
+    var n=parseInt(this.value,10); if(isNaN(n)) return;
+    prefs.rtb.table=clamp(n,1,999); savePrefs();
+    if(view==='rtb') renderAllA();
+  });
+  document.getElementById('opQn').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addASet(); } });
+  OPT_FIELDS.forEach(function(f){
+    document.getElementById(f[0]).addEventListener('input',function(){
+      if(!readOpts()) return;
+      if(isPow()) buildPow(false); else if(isTb()) renderAll(false); else if(isRx()) renderRx(false);
+    });
+  });
+  function addFromBox(){ addTable(parseInt(document.getElementById('opTable').value,10)); }
+  document.getElementById('opAdd').onclick=addFromBox;
+  document.getElementById('opTable').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addFromBox(); } });
+  function addFromPf(){ addFCard(parseInt(document.getElementById('opPf').value,10)); }
+  document.getElementById('opPfAdd').onclick=addFromPf;
+  document.getElementById('opPf').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addFromPf(); } });
+  fblocks.addEventListener('click',function(e){
+    var t=e.target.closest('button'); if(!t) return;
+    var el=t.closest('.tcard'); if(!el) return;
+    var card=findFCard(+el.dataset.n); if(!card) return;
+    if(t.classList.contains('tgl')){ card.open=!card.open; }
+    else if(t.classList.contains('tdone')){
+      if(card.done){ card.done=false; card.open=true; } else { card.done=true; card.open=false; }
+    }
+    else if(t.classList.contains('tadd')){ addFRow(card); return; }
+    else if(t.classList.contains('tdel')){
+      if(t.dataset.armed){ fcards.splice(fcards.indexOf(card),1); el.remove(); refreshFInputs(); update(); }
+      else { t.dataset.armed='1'; t.textContent='Remove?'; setTimeout(function(){ delete t.dataset.armed; t.textContent='×'; },3000); }
+      return;
+    }
+    applyFCard(card);
+  });
+  function addFromPn(){ addPCard(parseInt(document.getElementById('opPn').value,10)); }
+  document.getElementById('opPnAdd').onclick=addFromPn;
+  document.getElementById('opPn').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addFromPn(); } });
+  pblocks.addEventListener('click',function(e){
+    var t=e.target.closest('button'); if(!t) return;
+    var el=t.closest('.tcard'); if(!el) return;
+    var card=findPCard(+el.dataset.b); if(!card) return;
+    if(t.classList.contains('tgl')){ card.open=!card.open; }
+    else if(t.classList.contains('tdone')){
+      if(card.done){ card.done=false; card.open=true; } else { card.done=true; card.open=false; }
+    }
+    else if(t.classList.contains('tadd')){ addPRow(card); return; }
+    else if(t.classList.contains('tdel')){
+      if(t.dataset.armed){ pcards.splice(pcards.indexOf(card),1); el.remove(); refreshPInputs(); update(); }
+      else { t.dataset.armed='1'; t.textContent='Remove?'; setTimeout(function(){ delete t.dataset.armed; t.textContent='×'; },3000); }
+      return;
+    }
+    applyPCard(card);
+  });
+  document.getElementById('check').onclick=function(){ checked=true; update(); };
+  document.getElementById('shuffle').onclick=build;
+  document.getElementById('inorder').onclick=function(){ if(isTb()) renderAll(false); else if(isRx()) renderRx(false); else buildPow(false); };
+  document.getElementById('show').onclick=function(){ checked=true; revealed=true; update(); };
+  document.getElementById('reset').onclick=function(){
+    inputs.forEach(function(inp){ inp.value=''; });
+    if(isTb()) tcards.forEach(function(card){ card.done=false; card.open=true; applyCardState(card); });
+    if(isPp()) pcards.forEach(function(card){ card.done=false; card.open=true; applyPCard(card); });
+    if(isPf()) fcards.forEach(function(card){ card.done=false; card.open=true; applyFCard(card); });
+    if(isAd()) acards[view].forEach(function(card){ card.done=false; card.open=true; applyACard(card); });
+    if(isRx()) rxcards.forEach(function(card){ card.done=false; card.open=true; applyRxCard(card); });
+    checked=false; revealed=false; update();
+    if(!isTb() && inputs[0]) inputs[0].focus();
+  };
+  var side=document.getElementById('side'), scrim=document.getElementById('scrim');
+  function setMenu(o){ side.classList.toggle('open',o); scrim.classList.toggle('show',o); }
+  document.getElementById('menuBtn').onclick=function(){ setMenu(true); };
+  scrim.onclick=function(){ setMenu(false); };
+  side.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    if(b.closest('.tabs')||b.id==='cat-sq'||b.id==='cat-cu'||b.id==='cat-tb') setMenu(false);
+  });
+  setView('add');
+})();
+</script>
+</body>
+</html>
